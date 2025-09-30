@@ -163,7 +163,7 @@ export default function WorkoutManager({ routines, onBack, onRoutinesUpdated }: 
       onRoutinesUpdated()
     } catch (error) {
       console.error('Error saving routine:', error)
-      alert('Error saving routine. Please try again.')
+      alert(`Error saving routine: ${error instanceof Error ? error.message : 'Please try again.'}`)
     }
   }
 
@@ -181,7 +181,7 @@ export default function WorkoutManager({ routines, onBack, onRoutinesUpdated }: 
       onRoutinesUpdated()
     } catch (error) {
       console.error('Error deleting routine:', error)
-      alert('Error deleting routine. Please try again.')
+      alert(`Error deleting routine: ${error instanceof Error ? error.message : 'Please try again.'}`)
     }
   }
 

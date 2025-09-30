@@ -2,6 +2,20 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { WorkoutRoutine, Exercise, Workout, WorkoutSet } from './supabase'
 
+// Polyfill for crypto.randomUUID() for older browsers
+if (typeof window !== 'undefined' && !window.crypto?.randomUUID) {
+  if (!window.crypto) {
+    window.crypto = {} as Crypto;
+  }
+  (window.crypto as any).randomUUID = function() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+}
+
 interface CurrentWorkout {
   id: string
   routineId: string
@@ -256,3 +270,13 @@ export const useWorkoutStore = create<WorkoutStore>()(
     }
   )
 )
+
+// Cleanup on page unload to prevent memory leaks
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    const store = useWorkoutStore.getState();
+    if (store.timerInterval) {
+      clearInterval(store.timerInterval);
+    }
+  });
+}

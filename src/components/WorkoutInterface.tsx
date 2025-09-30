@@ -75,7 +75,24 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
 
   const currentExercise = currentWorkout.exercises[currentWorkout.currentExerciseIndex]
   const totalExercises = currentWorkout.exercises.length
-  const progress = ((currentWorkout.currentExerciseIndex + 1) / totalExercises) * 100
+  const progress = ((currentWorkout.currentExerciseIndex + 1) / totalExercises)
+
+  // Safety check for currentExercise
+  if (!currentExercise) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="card text-center">
+          <p className="text-red-600 mb-4">Error: Exercise not found</p>
+          <button onClick={onBackToHome} className="btn btn-secondary">
+            Back to Home
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Calculate progress percentage
+  const progressPercentage = progress * 100
 
   // Calculate current set number
   const completedSetsForExercise = currentWorkout.completedSets.filter(
@@ -107,7 +124,11 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
     
     weightInputs.forEach(input => {
       if (input.weight && input.reps) {
-        weights[`${input.weight}kg`] = parseInt(input.reps)
+        const weightNum = parseFloat(input.weight)
+        const repsNum = parseInt(input.reps)
+        if (!isNaN(weightNum) && !isNaN(repsNum) && weightNum > 0 && repsNum > 0) {
+          weights[`${weightNum}kg`] = repsNum
+        }
       }
     })
 
@@ -238,7 +259,7 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
           <div className="progress-bar">
             <div 
               className="progress-fill"
-              style={{ width: `${progress}%` }}
+              style={{ width: `${progressPercentage}%` }}
             ></div>
           </div>
         </div>
