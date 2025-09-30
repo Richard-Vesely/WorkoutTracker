@@ -45,7 +45,7 @@ export default function WorkoutDeleter({ onBack }: WorkoutDeleterProps) {
       setWorkouts(data || [])
     } catch (error) {
       console.error('Error loading workouts:', error)
-      alert(`Error loading workouts: ${error.message || 'Please try again.'}`)
+      alert(`Error loading workouts: ${error instanceof Error ? error.message : 'Please try again.'}`)
     } finally {
       setLoading(false)
     }
@@ -99,7 +99,7 @@ export default function WorkoutDeleter({ onBack }: WorkoutDeleterProps) {
       loadWorkouts()
     } catch (error) {
       console.error('Error creating test workout:', error)
-      alert(`Error creating test workout: ${error.message}`)
+      alert(`Error creating test workout: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -157,7 +157,7 @@ export default function WorkoutDeleter({ onBack }: WorkoutDeleterProps) {
       loadWorkouts()
     } catch (error) {
       console.error('Error deleting workouts:', error)
-      alert(`Error deleting workouts: ${error.message || 'Please try again.'}`)
+      alert(`Error deleting workouts: ${error instanceof Error ? error.message : 'Please try again.'}`)
     }
   }
 
