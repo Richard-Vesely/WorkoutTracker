@@ -197,7 +197,7 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
       alert('Workout completed and saved!')
     } catch (error) {
       console.error('Error saving workout:', error)
-      alert(`Error saving workout: ${error.message || 'Please try again.'}`)
+      alert(`Error saving workout: ${error instanceof Error ? error.message : 'Please try again.'}`)
     }
   }
 
