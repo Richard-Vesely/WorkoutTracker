@@ -334,9 +334,34 @@ export const useWorkoutStore = create<WorkoutStore>()(
       loadWorkout: () => {
         // Check if stored workout has invalid ID format and clear if needed
         const { currentWorkout } = get()
-        if (currentWorkout && currentWorkout.id && !currentWorkout.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)) {
-          console.log('Clearing invalid workout data with old ID format:', currentWorkout.id)
-          get().clearWorkout()
+        if (currentWorkout) {
+          if (currentWorkout.id && !currentWorkout.id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)) {
+            console.log('Clearing invalid workout data with old ID format:', currentWorkout.id)
+            get().clearWorkout()
+            return
+          }
+          
+          // Migrate old workout data to include completedExercises
+          let completedExercises = currentWorkout.completedExercises
+          if (!completedExercises) {
+            console.log('Migrating workout data to include completedExercises')
+            completedExercises = new Set()
+          } else if (Array.isArray(completedExercises)) {
+            // Convert array to Set if it was serialized as array
+            console.log('Converting completedExercises from array to Set')
+            completedExercises = new Set(completedExercises)
+          } else if (!(completedExercises instanceof Set)) {
+            // Ensure it's a Set
+            completedExercises = new Set()
+          }
+          
+          set({
+            currentWorkout: {
+              ...currentWorkout,
+              completedExercises,
+              startTime: new Date(currentWorkout.startTime),
+            }
+          })
         }
       },
 
@@ -357,9 +382,17 @@ export const useWorkoutStore = create<WorkoutStore>()(
     {
       name: 'workout-store',
       partialize: (state) => ({
-        currentWorkout: state.currentWorkout,
+        currentWorkout: state.currentWorkout ? {
+          ...state.currentWorkout,
+          completedExercises: Array.from(state.currentWorkout.completedExercises || []),
+        } : null,
         selectedRoutineId: state.selectedRoutineId,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state?.currentWorkout?.completedExercises && Array.isArray(state.currentWorkout.completedExercises)) {
+          state.currentWorkout.completedExercises = new Set(state.currentWorkout.completedExercises)
+        }
+      },
     }
   )
 )
