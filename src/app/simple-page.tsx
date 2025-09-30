@@ -8,7 +8,7 @@ import RoutineSelection from '@/components/RoutineSelection'
 import SimpleWorkoutInterface from '@/components/SimpleWorkoutInterface'
 import { Dumbbell } from 'lucide-react'
 
-export default function Home() {
+export default function SimpleHome() {
   const [routines, setRoutines] = useState<(WorkoutRoutine & { exercises: Exercise[] })[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -79,9 +79,8 @@ export default function Home() {
 
   const handleBackToHome = () => {
     setCurrentScreen('home')
-    setSelectedRoutine('')
+    setSelectedRoutine(null)
   }
-
 
   const handleRoutineSelect = (routineId: string) => {
     setSelectedRoutine(routineId)
@@ -110,9 +109,9 @@ export default function Home() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="card text-center max-w-md">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
-          <p className="text-gray-700 mb-4">{error}</p>
+          <p className="text-slate-600 mb-6">{error}</p>
           <button 
-            onClick={loadRoutines}
+            onClick={() => window.location.reload()} 
             className="btn btn-primary"
           >
             Try Again
@@ -122,32 +121,32 @@ export default function Home() {
     )
   }
 
+  if (currentScreen === 'routines') {
+    return (
+      <RoutineSelection
+        routines={routines}
+        selectedRoutineId={selectedRoutineId}
+        onRoutineSelect={handleRoutineSelect}
+        onStartWorkout={handleStartSelectedWorkout}
+        onBack={handleBackToHome}
+      />
+    )
+  }
+
+  if (currentScreen === 'workout' && currentWorkout) {
+    return (
+      <SimpleWorkoutInterface
+        routines={routines}
+        onBackToHome={handleBackToHome}
+      />
+    )
+  }
+
   return (
-    <div className="min-h-screen">
-      {currentScreen === 'home' && (
-        <HomeScreen 
-          onStartWorkout={handleStartWorkout}
-          onContinueWorkout={handleContinueWorkout}
-          hasCurrentWorkout={!!currentWorkout}
-        />
-      )}
-      
-      {currentScreen === 'routines' && (
-        <RoutineSelection
-          routines={routines}
-          selectedRoutineId={selectedRoutineId}
-          onRoutineSelect={handleRoutineSelect}
-          onStartWorkout={handleStartSelectedWorkout}
-          onBack={handleBackToHome}
-        />
-      )}
-      
-      {currentScreen === 'workout' && (
-        <SimpleWorkoutInterface 
-          routines={routines}
-          onBackToHome={handleBackToHome}
-        />
-      )}
-    </div>
+    <HomeScreen
+      onStartWorkout={handleStartWorkout}
+      onContinueWorkout={handleContinueWorkout}
+      hasCurrentWorkout={!!currentWorkout}
+    />
   )
 }

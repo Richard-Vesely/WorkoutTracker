@@ -1,27 +1,27 @@
 'use client'
 
-import { Dumbbell, Play, RotateCcw, Settings, Trash2 } from 'lucide-react'
+import { Dumbbell, Play, RotateCcw } from 'lucide-react'
 import { useWorkoutStore } from '@/lib/simpleStore'
 
-interface HomeScreenProps {
+interface SimpleHomeScreenProps {
   onStartWorkout: () => void
   onContinueWorkout: () => void
   hasCurrentWorkout: boolean
 }
 
-export default function HomeScreen({ 
+export default function SimpleHomeScreen({ 
   onStartWorkout, 
   onContinueWorkout, 
   hasCurrentWorkout 
-}: HomeScreenProps) {
+}: SimpleHomeScreenProps) {
   const { clearWorkout } = useWorkoutStore()
 
   const handleClearWorkout = () => {
     if (confirm('Clear current workout data? This will remove any unsaved progress.')) {
       clearWorkout()
-      window.location.reload()
     }
   }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex flex-col">
       {/* Header */}
@@ -30,7 +30,7 @@ export default function HomeScreen({
           <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center">
             <Dumbbell className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Workout</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Workout Tracker</h1>
         </div>
         
         {process.env.NODE_ENV === 'development' && (
@@ -70,13 +70,12 @@ export default function HomeScreen({
           {hasCurrentWorkout && (
             <button
               onClick={onContinueWorkout}
-              className="btn btn-secondary w-full flex items-center justify-center gap-3"
+              className="btn btn-success w-full flex items-center justify-center gap-3 text-lg"
             >
               <RotateCcw className="w-5 h-5" />
               Continue Workout
             </button>
           )}
-
         </div>
       </div>
     </div>
