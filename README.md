@@ -2,6 +2,8 @@
 
 A modern, responsive workout tracking web application built with Next.js, Supabase, and deployed on Vercel. Features PWA support for mobile installation and real-time data synchronization.
 
+🎯 **Auto-deployment test**: This change will trigger automatic Vercel deployment!
+
 ## 🚀 Features
 
 - ✅ **Responsive Design** - Works perfectly on mobile and desktop
