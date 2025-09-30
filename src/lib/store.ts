@@ -49,6 +49,7 @@ interface WorkoutStore {
   
   // Timer actions
   startBreakTimer: (seconds?: number) => void
+  stopBreakTimer: () => void
   pauseBreakTimer: () => void
   resumeBreakTimer: () => void
   skipBreak: () => void
@@ -220,7 +221,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
         get().startBreakTimer(breakTimeLeft)
       },
 
-      skipBreak: () => {
+      stopBreakTimer: () => {
         const { timerInterval } = get()
         if (timerInterval) {
           clearInterval(timerInterval)
@@ -230,6 +231,10 @@ export const useWorkoutStore = create<WorkoutStore>()(
           breakTimeLeft: 0,
           timerInterval: null,
         })
+      },
+
+      skipBreak: () => {
+        get().stopBreakTimer()
       },
 
       // Routine selection

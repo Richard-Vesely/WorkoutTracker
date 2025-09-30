@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import GlobalBreakTimer from '@/components/GlobalBreakTimer'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -37,6 +38,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
       </head>
       <body className={`${inter.className} bg-slate-50 min-h-screen`}>
+        <GlobalBreakTimer />
         <div className="min-h-screen">
           {children}
         </div>

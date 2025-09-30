@@ -41,6 +41,8 @@ export interface WorkoutSet {
   exercise_name: string
   set_number: number
   weights: Record<string, number> // e.g., {"50kg": 10, "45kg": 8}
-  muscle_feeling: number
+  intensity: number // 1=not at all, 5=burning
+  correctness: number // 1=completely off, 5=perfect
+  comment?: string // Optional text comment
   created_at: string
 }

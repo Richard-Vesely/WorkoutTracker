@@ -45,7 +45,9 @@ CREATE TABLE workout_sets (
   exercise_name TEXT NOT NULL,
   set_number INTEGER NOT NULL,
   weights JSONB NOT NULL, -- {"50kg": 10, "45kg": 8}
-  muscle_feeling INTEGER CHECK (muscle_feeling >= 1 AND muscle_feeling <= 5) DEFAULT 3,
+  intensity INTEGER CHECK (intensity >= 1 AND intensity <= 5) NOT NULL, -- 1=not at all, 5=burning
+  correctness INTEGER CHECK (correctness >= 1 AND correctness <= 5) NOT NULL, -- 1=completely off, 5=perfect
+  comment TEXT, -- Optional text comment
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

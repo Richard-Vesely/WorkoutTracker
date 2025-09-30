@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useWorkoutStore } from '@/lib/store'
 import { WorkoutRoutine, Exercise, supabase } from '@/lib/supabase'
 import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Plus, X } from 'lucide-react'
-import BreakTimer from './BreakTimer'
+import MuscleFeelingInput from './MuscleFeelingInput'
 
 interface WorkoutInterfaceProps {
   routines: (WorkoutRoutine & { exercises: Exercise[] })[]
@@ -25,15 +25,15 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
     logSet,
     nextExercise,
     previousExercise,
-    isBreakActive,
-    startBreakTimer,
     selectedRoutineId,
   } = useWorkoutStore()
 
   const [weightInputs, setWeightInputs] = useState<WeightInput[]>([
     { id: '1', weight: '', reps: '' }
   ])
-  const [muscleFeeling, setMuscleFeeling] = useState(3)
+  const [intensity, setIntensity] = useState(0)
+  const [correctness, setCorrectness] = useState(0)
+  const [comment, setComment] = useState('')
   const [newGoals, setNewGoals] = useState({ weight: '', reps: '', sets: '' })
 
   // Initialize workout if not already started
@@ -120,6 +120,12 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
   }
 
   const handleLogSet = async () => {
+    // Validate inputs
+    if (intensity === 0 || correctness === 0) {
+      alert('Please select both intensity and correctness before logging the set.')
+      return
+    }
+
     const weights: Record<string, number> = {}
     
     weightInputs.forEach(input => {
@@ -141,7 +147,9 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
       exercise_name: currentExercise.name,
       set_number: currentSetNumber,
       weights,
-      muscle_feeling: muscleFeeling,
+      intensity,
+      correctness,
+      comment: comment.trim() || undefined,
     }
 
     // Log set locally (will be saved to database when workout is finished)
@@ -157,8 +165,8 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
         return
       }
     } else {
-      // Start break timer
-      startBreakTimer(120) // 2 minutes
+      // Advance to next set (break timer is now global)
+      // currentSetNumber is calculated, so no need to update state
     }
 
     // Reset form
@@ -167,7 +175,9 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
       weight: currentExercise.weight.toString(),
       reps: currentExercise.reps.toString()
     }])
-    setMuscleFeeling(3)
+    setIntensity(0)
+    setCorrectness(0)
+    setComment('')
   }
 
   const handleFinishWorkout = async () => {
@@ -204,7 +214,9 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
             exercise_name: set.exercise_name,
             set_number: set.set_number,
             weights: set.weights,
-            muscle_feeling: set.muscle_feeling,
+            intensity: set.intensity,
+            correctness: set.correctness,
+            comment: set.comment,
           })))
 
         if (setsError) {
@@ -300,11 +312,8 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
           </div>
         </div>
 
-        {/* Break Timer */}
-        {isBreakActive && <BreakTimer />}
-
         {/* Set Logging */}
-        {!isBreakActive && (
+        {(
           <div className="card mb-6">
             <h3 className="text-xl font-bold text-slate-900 mb-6">Log Set {currentSetNumber}</h3>
             
@@ -359,30 +368,32 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
 
             {/* Muscle Feeling */}
             <div className="mb-6">
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Muscle Feeling (1-5)
-              </label>
-              <select
-                className="select"
-                value={muscleFeeling}
-                onChange={(e) => setMuscleFeeling(parseInt(e.target.value))}
-              >
-                <option value={1}>1 - Very Light</option>
-                <option value={2}>2 - Light</option>
-                <option value={3}>3 - Moderate</option>
-                <option value={4}>4 - Hard</option>
-                <option value={5}>5 - Very Hard</option>
-              </select>
+              <MuscleFeelingInput
+                intensity={intensity}
+                correctness={correctness}
+                comment={comment}
+                onIntensityChange={setIntensity}
+                onCorrectnessChange={setCorrectness}
+                onCommentChange={setComment}
+              />
             </div>
 
-            <button onClick={handleLogSet} className="btn btn-success w-full">
-              Log Set & Start Break
+            <button 
+              onClick={handleLogSet} 
+              className={`btn w-full ${
+                intensity > 0 && correctness > 0 
+                  ? 'btn-success' 
+                  : 'btn-disabled'
+              }`}
+              disabled={intensity === 0 || correctness === 0}
+            >
+              Log Set
             </button>
           </div>
         )}
 
         {/* Goal Updates */}
-        {!isBreakActive && (
+        {(
           <div className="card mb-6">
             <h3 className="text-lg font-semibold text-slate-900 mb-4">Update Goals (Optional)</h3>
             <div className="grid grid-cols-3 gap-3 mb-4">
