@@ -51,6 +51,7 @@ interface CurrentWorkout {
   currentExerciseIndex: number
   energyLevel: number
   completedSets: WorkoutSet[]
+  completedExercises: Set<string> // Track which exercises are marked complete
 }
 
 interface WorkoutStore {
@@ -69,9 +70,13 @@ interface WorkoutStore {
   startWorkout: (routine: WorkoutRoutine, exercises: Exercise[]) => void
   endWorkout: () => void
   logSet: (set: Omit<WorkoutSet, 'id' | 'workout_id' | 'created_at'>) => void
+  removeSet: (setId: string) => void
+  updateSet: (setId: string, set: Partial<WorkoutSet>) => void
   nextExercise: () => void
   previousExercise: () => void
   setCurrentExercise: (index: number) => void
+  markExerciseComplete: (exerciseName: string) => void
+  markExerciseIncomplete: (exerciseName: string) => void
   
   // Timer actions
   startBreakTimer: (seconds?: number) => void
@@ -111,6 +116,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
             currentExerciseIndex: 0,
             energyLevel: 3,
             completedSets: [],
+            completedExercises: new Set(),
           },
         })
       },
@@ -143,6 +149,62 @@ export const useWorkoutStore = create<WorkoutStore>()(
           currentWorkout: {
             ...currentWorkout,
             completedSets: [...currentWorkout.completedSets, newSet],
+          },
+        })
+      },
+
+      removeSet: (setId) => {
+        const { currentWorkout } = get()
+        if (!currentWorkout) return
+
+        set({
+          currentWorkout: {
+            ...currentWorkout,
+            completedSets: currentWorkout.completedSets.filter(set => set.id !== setId),
+          },
+        })
+      },
+
+      updateSet: (setId, setData) => {
+        const { currentWorkout } = get()
+        if (!currentWorkout) return
+
+        set({
+          currentWorkout: {
+            ...currentWorkout,
+            completedSets: currentWorkout.completedSets.map(set => 
+              set.id === setId ? { ...set, ...setData } : set
+            ),
+          },
+        })
+      },
+
+      markExerciseComplete: (exerciseName) => {
+        const { currentWorkout } = get()
+        if (!currentWorkout) return
+
+        const newCompletedExercises = new Set(currentWorkout.completedExercises)
+        newCompletedExercises.add(exerciseName)
+
+        set({
+          currentWorkout: {
+            ...currentWorkout,
+            completedExercises: newCompletedExercises,
+          },
+        })
+      },
+
+      markExerciseIncomplete: (exerciseName) => {
+        const { currentWorkout } = get()
+        if (!currentWorkout) return
+
+        const newCompletedExercises = new Set(currentWorkout.completedExercises)
+        newCompletedExercises.delete(exerciseName)
+
+        set({
+          currentWorkout: {
+            ...currentWorkout,
+            completedExercises: newCompletedExercises,
           },
         })
       },

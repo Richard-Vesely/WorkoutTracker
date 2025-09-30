@@ -3,9 +3,12 @@
 import { useEffect, useState } from 'react'
 import { useWorkoutStore } from '@/lib/store'
 import { WorkoutRoutine, Exercise, supabase } from '@/lib/supabase'
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Plus, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Plus, X, List, Target } from 'lucide-react'
 import MuscleFeelingInput from './MuscleFeelingInput'
 import FinishWorkoutConfirmation from './FinishWorkoutConfirmation'
+import CurrentWorkoutPage from './CurrentWorkoutPage'
+import ExerciseSelector from './ExerciseSelector'
+import SetEditor from './SetEditor'
 import { showError, showSuccess } from '@/lib/errorHandler'
 
 interface WorkoutInterfaceProps {
@@ -27,6 +30,8 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
     logSet,
     nextExercise,
     previousExercise,
+    setCurrentExercise,
+    markExerciseComplete,
     selectedRoutineId,
   } = useWorkoutStore()
 
@@ -38,6 +43,9 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
   const [comment, setComment] = useState('')
   const [newGoals, setNewGoals] = useState({ weight: '', reps: '', sets: '' })
   const [showFinishConfirmation, setShowFinishConfirmation] = useState(false)
+  const [currentView, setCurrentView] = useState<'workout' | 'overview' | 'exercise-selector' | 'set-editor'>('workout')
+  const [editingSetId, setEditingSetId] = useState<string | null>(null)
+  const [selectedExerciseForSet, setSelectedExerciseForSet] = useState<string | null>(null)
 
   // Initialize workout if not already started
   useEffect(() => {
@@ -158,19 +166,9 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
     // Log set locally (will be saved to database when workout is finished)
     logSet(setData)
 
-    // Check if all sets completed for this exercise
-    if (currentSetNumber >= currentExercise.sets) {
-      // Move to next exercise or finish workout
-      if (currentWorkout.currentExerciseIndex < totalExercises - 1) {
-        nextExercise()
-      } else {
-        handleFinishWorkout()
-        return
-      }
-    } else {
-      // Advance to next set (break timer is now global)
-      // currentSetNumber is calculated, so no need to update state
-    }
+    // Always allow more sets (warmup sets, etc.)
+    // Don't auto-advance to next exercise
+    // User can manually navigate or mark exercise complete
 
     // Reset form
     setWeightInputs([{
@@ -196,18 +194,72 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
     setShowFinishConfirmation(false)
   }
 
+  const handleEditSet = (setId: string) => {
+    setEditingSetId(setId)
+    setCurrentView('set-editor')
+  }
+
+  const handleAddSet = (exerciseName: string) => {
+    setSelectedExerciseForSet(exerciseName)
+    setCurrentView('exercise-selector')
+  }
+
+  const handleSelectExercise = (exerciseName: string) => {
+    // Find the exercise and set it as current
+    const exerciseIndex = currentWorkout.exercises.findIndex(ex => ex.name === exerciseName)
+    if (exerciseIndex !== -1) {
+      setCurrentExercise(exerciseIndex)
+      setCurrentView('workout')
+    }
+  }
+
+  const handleBackToWorkout = () => {
+    setCurrentView('workout')
+    setEditingSetId(null)
+    setSelectedExerciseForSet(null)
+  }
+
   const updateGoals = () => {
     // This would update the exercise goals in the database
     // For now, just clear the inputs
     setNewGoals({ weight: '', reps: '', sets: '' })
   }
 
-  // Show finish confirmation page
+  // Show different views based on currentView state
   if (showFinishConfirmation) {
     return (
       <FinishWorkoutConfirmation
         onBack={handleCancelFinish}
         onFinish={handleConfirmFinish}
+      />
+    )
+  }
+
+  if (currentView === 'overview') {
+    return (
+      <CurrentWorkoutPage
+        onBack={handleBackToWorkout}
+        onEditSet={handleEditSet}
+        onAddSet={handleAddSet}
+      />
+    )
+  }
+
+  if (currentView === 'exercise-selector') {
+    return (
+      <ExerciseSelector
+        onSelectExercise={handleSelectExercise}
+        onBack={handleBackToWorkout}
+      />
+    )
+  }
+
+  if (currentView === 'set-editor' && editingSetId) {
+    return (
+      <SetEditor
+        setId={editingSetId}
+        onBack={handleBackToWorkout}
+        onSave={handleBackToWorkout}
       />
     )
   }
@@ -227,6 +279,22 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
             <h1 className="text-2xl font-bold text-slate-900">{currentWorkout.routineName}</h1>
             <p className="text-slate-600">Started: {new Date(currentWorkout.startTime).toLocaleTimeString()}</p>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setCurrentView('overview')}
+            className="w-10 h-10 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center hover:bg-blue-200 transition-colors duration-200"
+            title="View all sets"
+          >
+            <List className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setCurrentView('exercise-selector')}
+            className="w-10 h-10 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center hover:bg-green-200 transition-colors duration-200"
+            title="Select exercise"
+          >
+            <Target className="w-5 h-5" />
+          </button>
         </div>
       </div>
 
@@ -251,9 +319,16 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
         {/* Exercise Info */}
         <div className="card mb-6">
           <div className="text-center mb-6">
-            <h2 className="text-3xl font-bold text-slate-900 mb-3">
-              {currentExercise.name}
-            </h2>
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <h2 className="text-3xl font-bold text-slate-900">
+                {currentExercise.name}
+              </h2>
+              {currentWorkout.completedExercises.has(currentExercise.name) && (
+                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm">✓</span>
+                </div>
+              )}
+            </div>
             <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-xl font-medium">
               Goal: {currentExercise.sets} × {currentExercise.reps} @ {currentExercise.weight}kg
             </div>
@@ -271,7 +346,12 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
             
             <div className="text-center">
               <div className="text-2xl font-bold text-slate-900">Set {currentSetNumber}</div>
-              <div className="text-sm text-slate-500">of {currentExercise.sets}</div>
+              <div className="text-sm text-slate-500">
+                {completedSetsForExercise} completed
+                {completedSetsForExercise >= currentExercise.sets && (
+                  <span className="text-green-600 ml-1">(+{completedSetsForExercise - currentExercise.sets})</span>
+                )}
+              </div>
             </div>
             
             <button
@@ -350,17 +430,30 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
               />
             </div>
 
-            <button 
-              onClick={handleLogSet} 
-              className={`btn w-full ${
-                intensity > 0 && correctness > 0 
-                  ? 'btn-success' 
-                  : 'btn-disabled'
-              }`}
-              disabled={intensity === 0 || correctness === 0}
-            >
-              Log Set
-            </button>
+            <div className="flex gap-3">
+              <button 
+                onClick={handleLogSet} 
+                className={`btn flex-1 ${
+                  intensity > 0 && correctness > 0 
+                    ? 'btn-success' 
+                    : 'btn-disabled'
+                }`}
+                disabled={intensity === 0 || correctness === 0}
+              >
+                Log Set
+              </button>
+              {completedSetsForExercise >= currentExercise.sets && !currentWorkout.completedExercises.has(currentExercise.name) && (
+                <button
+                  onClick={() => {
+                    markExerciseComplete(currentExercise.name)
+                    showSuccess(`${currentExercise.name} marked as complete!`)
+                  }}
+                  className="btn btn-primary"
+                >
+                  Mark Complete
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -399,11 +492,13 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
         )}
 
         {/* Fixed Bottom Button */}
-        <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t border-slate-100">
-          <button onClick={handleFinishWorkout} className="btn btn-danger w-full">
-            Finish Workout
-          </button>
-        </div>
+        {currentWorkout.completedExercises.size === totalExercises && (
+          <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t border-slate-100">
+            <button onClick={handleFinishWorkout} className="btn btn-danger w-full">
+              Finish Workout
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
