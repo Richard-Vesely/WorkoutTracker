@@ -1,0 +1,14 @@
+{
+  "name": "Workout Tracker",
+  "short_name": "Workout",
+  "description": "Track your fitness journey with detailed workout logging",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#667eea",
+  "theme_color": "#667eea",
+  "orientation": "portrait-primary",
+  "icons": [],
+  "screenshots": [],
+  "categories": ["fitness", "health", "lifestyle"],
+  "lang": "en-US"
+}
