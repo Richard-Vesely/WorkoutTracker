@@ -16,10 +16,35 @@ export default function GlobalBreakTimer() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
-  // Play beep sound
+  // Play beep sound with better browser compatibility
   const playBeep = () => {
     try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+      // Check if AudioContext is available
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
+      if (!AudioContextClass) {
+        console.log('AudioContext not supported, skipping beep')
+        return
+      }
+
+      const audioContext = new AudioContextClass()
+      
+      // Resume context if suspended (required by some browsers)
+      if (audioContext.state === 'suspended') {
+        audioContext.resume().then(() => {
+          playBeepSound(audioContext)
+        }).catch(error => {
+          console.log('Could not resume audio context:', error)
+        })
+      } else {
+        playBeepSound(audioContext)
+      }
+    } catch (error) {
+      console.log('Could not play beep sound:', error)
+    }
+  }
+
+  const playBeepSound = (audioContext: AudioContext) => {
+    try {
       const oscillator = audioContext.createOscillator()
       const gainNode = audioContext.createGain()
       
@@ -35,7 +60,7 @@ export default function GlobalBreakTimer() {
       oscillator.start(audioContext.currentTime)
       oscillator.stop(audioContext.currentTime + 2)
     } catch (error) {
-      console.log('Could not play beep sound:', error)
+      console.log('Could not create beep sound:', error)
     }
   }
 

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useWorkoutStore } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
 import { CheckCircle, XCircle, Clock, Dumbbell } from 'lucide-react'
+import { showError, showSuccess } from '@/lib/errorHandler'
 
 interface FinishWorkoutConfirmationProps {
   onBack: () => void
@@ -66,10 +67,13 @@ export default function FinishWorkoutConfirmation({ onBack, onFinish }: FinishWo
       }
 
       endWorkout()
+      showSuccess('Workout completed and saved successfully!', 'Workout Saved')
       onFinish()
     } catch (error) {
       console.error('Error saving workout:', error)
-      setError(`Error saving workout: ${error instanceof Error ? error.message : 'Please try again.'}`)
+      const errorMessage = `Error saving workout: ${error instanceof Error ? error.message : 'Please try again.'}`
+      setError(errorMessage)
+      showError(errorMessage, 'Save Error')
     } finally {
       setIsFinishing(false)
     }

@@ -6,6 +6,7 @@ import { WorkoutRoutine, Exercise, supabase } from '@/lib/supabase'
 import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Plus, X } from 'lucide-react'
 import MuscleFeelingInput from './MuscleFeelingInput'
 import FinishWorkoutConfirmation from './FinishWorkoutConfirmation'
+import { showError, showSuccess } from '@/lib/errorHandler'
 
 interface WorkoutInterfaceProps {
   routines: (WorkoutRoutine & { exercises: Exercise[] })[]
@@ -124,7 +125,7 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
   const handleLogSet = async () => {
     // Validate inputs
     if (intensity === 0 || correctness === 0) {
-      alert('Please select both intensity and correctness before logging the set.')
+      showError('Please select both intensity and correctness before logging the set.', 'Validation Error')
       return
     }
 
@@ -141,7 +142,7 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
     })
 
     if (Object.keys(weights).length === 0) {
-      alert('Please enter at least one weight and reps combination')
+      showError('Please enter at least one weight and reps combination', 'Validation Error')
       return
     }
 

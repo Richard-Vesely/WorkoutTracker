@@ -2,18 +2,44 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { WorkoutRoutine, Exercise, Workout, WorkoutSet } from './supabase'
 
-// Polyfill for crypto.randomUUID() for older browsers
-if (typeof window !== 'undefined' && !window.crypto?.randomUUID) {
+// Enhanced polyfill for crypto.randomUUID() for older browsers and Zen browser
+if (typeof window !== 'undefined') {
+  // Ensure crypto object exists
   if (!window.crypto) {
-    window.crypto = {} as Crypto;
+    (window as any).crypto = {};
   }
-  (window.crypto as any).randomUUID = function() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
-  };
+  
+  // Enhanced UUID polyfill with better randomness
+  if (!window.crypto.randomUUID) {
+    (window.crypto as any).randomUUID = function() {
+      // Use crypto.getRandomValues if available, fallback to Math.random
+      let array;
+      if (window.crypto && window.crypto.getRandomValues) {
+        array = new Uint8Array(16);
+        window.crypto.getRandomValues(array);
+      } else {
+        // Fallback for browsers without crypto.getRandomValues
+        array = new Uint8Array(16);
+        for (let i = 0; i < 16; i++) {
+          array[i] = Math.floor(Math.random() * 256);
+        }
+      }
+      
+      // Set version (4) and variant bits
+      array[6] = (array[6] & 0x0f) | 0x40;
+      array[8] = (array[8] & 0x3f) | 0x80;
+      
+      // Convert to hex string
+      const hex = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+      return [
+        hex.slice(0, 8),
+        hex.slice(8, 12),
+        hex.slice(12, 16),
+        hex.slice(16, 20),
+        hex.slice(20, 32)
+      ].join('-');
+    };
+  }
 }
 
 interface CurrentWorkout {
