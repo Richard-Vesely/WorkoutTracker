@@ -5,7 +5,8 @@ import { useWorkoutStore } from '@/lib/store'
 
 export default function GlobalBreakTimer() {
   const { isBreakActive, breakTimeLeft, startBreakTimer, stopBreakTimer } = useWorkoutStore()
-  const [customDuration, setCustomDuration] = useState(120) // 2 minutes default
+  const [customMinutes, setCustomMinutes] = useState(2) // 2 minutes default
+  const [customSeconds, setCustomSeconds] = useState(0) // 0 seconds default
   const [isEditingDuration, setIsEditingDuration] = useState(false)
 
   // Format time as MM:SS
@@ -47,15 +48,23 @@ export default function GlobalBreakTimer() {
   }, [isBreakActive, breakTimeLeft, stopBreakTimer])
 
   // Handle custom duration change
-  const handleDurationChange = (minutes: number) => {
-    setCustomDuration(minutes)
+  const handleDurationChange = () => {
     setIsEditingDuration(false)
   }
 
   // Start break with custom duration
   const startCustomBreak = () => {
-    startBreakTimer(customDuration * 60) // Convert minutes to seconds
+    const totalSeconds = customMinutes * 60 + customSeconds
+    startBreakTimer(totalSeconds)
     setIsEditingDuration(false)
+  }
+
+  // Get current duration display
+  const getDurationDisplay = () => {
+    if (customSeconds === 0) {
+      return `${customMinutes} min`
+    }
+    return `${customMinutes}:${customSeconds.toString().padStart(2, '0')}`
   }
 
   if (!isBreakActive) {
@@ -68,16 +77,25 @@ export default function GlobalBreakTimer() {
               <div className="flex items-center gap-2">
                 <input
                   type="number"
-                  min="1"
-                  max="30"
-                  value={customDuration}
-                  onChange={(e) => setCustomDuration(parseInt(e.target.value) || 1)}
-                  className="w-16 px-2 py-1 text-sm border border-slate-300 rounded"
+                  min="0"
+                  max="59"
+                  value={customMinutes}
+                  onChange={(e) => setCustomMinutes(Math.max(0, parseInt(e.target.value) || 0))}
+                  className="w-12 px-2 py-1 text-sm border border-slate-300 rounded"
                   autoFocus
                 />
-                <span className="text-sm text-slate-500">minutes</span>
+                <span className="text-sm text-slate-500">min</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  value={customSeconds}
+                  onChange={(e) => setCustomSeconds(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
+                  className="w-12 px-2 py-1 text-sm border border-slate-300 rounded"
+                />
+                <span className="text-sm text-slate-500">sec</span>
                 <button
-                  onClick={() => handleDurationChange(customDuration)}
+                  onClick={handleDurationChange}
                   className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
                 >
                   Set
@@ -91,7 +109,7 @@ export default function GlobalBreakTimer() {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-700">{customDuration} min</span>
+                <span className="text-sm text-slate-700">{getDurationDisplay()}</span>
                 <button
                   onClick={() => setIsEditingDuration(true)}
                   className="px-2 py-1 text-xs bg-slate-200 text-slate-600 rounded hover:bg-slate-300"
@@ -132,10 +150,10 @@ export default function GlobalBreakTimer() {
             Stop
           </button>
           <button
-            onClick={() => startBreakTimer(customDuration * 60)}
+            onClick={() => startBreakTimer(customMinutes * 60 + customSeconds)}
             className="px-3 py-1 text-sm bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
           >
-            +{customDuration}min
+            +{getDurationDisplay()}
           </button>
         </div>
       </div>

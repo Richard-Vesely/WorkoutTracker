@@ -170,7 +170,7 @@ export const useWorkoutStore = create<WorkoutStore>()(
       },
 
       // Timer actions
-      startBreakTimer: (seconds = 120) => {
+      startBreakTimer: (seconds = 120) => { // 2 minutes default
         const { timerInterval } = get()
         if (timerInterval) {
           clearInterval(timerInterval)

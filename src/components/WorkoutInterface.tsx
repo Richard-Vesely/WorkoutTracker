@@ -5,6 +5,7 @@ import { useWorkoutStore } from '@/lib/store'
 import { WorkoutRoutine, Exercise, supabase } from '@/lib/supabase'
 import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Plus, X } from 'lucide-react'
 import MuscleFeelingInput from './MuscleFeelingInput'
+import FinishWorkoutConfirmation from './FinishWorkoutConfirmation'
 
 interface WorkoutInterfaceProps {
   routines: (WorkoutRoutine & { exercises: Exercise[] })[]
@@ -35,6 +36,7 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
   const [correctness, setCorrectness] = useState(0)
   const [comment, setComment] = useState('')
   const [newGoals, setNewGoals] = useState({ weight: '', reps: '', sets: '' })
+  const [showFinishConfirmation, setShowFinishConfirmation] = useState(false)
 
   // Initialize workout if not already started
   useEffect(() => {
@@ -180,64 +182,33 @@ export default function WorkoutInterface({ routines, onBackToHome }: WorkoutInte
     setComment('')
   }
 
-  const handleFinishWorkout = async () => {
-    if (!confirm('Are you sure you want to finish this workout?')) return
+  const handleFinishWorkout = () => {
+    setShowFinishConfirmation(true)
+  }
 
-    try {
-      // Save workout to database
-      const endTime = new Date()
-      const startTime = new Date(currentWorkout.startTime)
-      const duration = Math.round((endTime.getTime() - startTime.getTime()) / 1000 / 60)
+  const handleConfirmFinish = () => {
+    setShowFinishConfirmation(false)
+    onBackToHome()
+  }
 
-      const { error: workoutError } = await supabase.from('workouts').insert({
-        id: currentWorkout.id,
-        routine_id: currentWorkout.routineId,
-        routine_name: currentWorkout.routineName,
-        start_time: startTime.toISOString(),
-        end_time: endTime.toISOString(),
-        duration,
-        energy_level: currentWorkout.energyLevel,
-      })
-
-      if (workoutError) {
-        console.error('Supabase workout error:', workoutError)
-        throw workoutError
-      }
-
-      // Save all workout sets to database
-      if (currentWorkout.completedSets.length > 0) {
-        const { error: setsError } = await supabase
-          .from('workout_sets')
-          .insert(currentWorkout.completedSets.map(set => ({
-            id: set.id,
-            workout_id: set.workout_id,
-            exercise_name: set.exercise_name,
-            set_number: set.set_number,
-            weights: set.weights,
-            intensity: set.intensity,
-            correctness: set.correctness,
-            comment: set.comment,
-          })))
-
-        if (setsError) {
-          console.error('Supabase sets error:', setsError)
-          throw setsError
-        }
-      }
-
-      endWorkout()
-      onBackToHome()
-      alert('Workout completed and saved!')
-    } catch (error) {
-      console.error('Error saving workout:', error)
-      alert(`Error saving workout: ${error instanceof Error ? error.message : 'Please try again.'}`)
-    }
+  const handleCancelFinish = () => {
+    setShowFinishConfirmation(false)
   }
 
   const updateGoals = () => {
     // This would update the exercise goals in the database
     // For now, just clear the inputs
     setNewGoals({ weight: '', reps: '', sets: '' })
+  }
+
+  // Show finish confirmation page
+  if (showFinishConfirmation) {
+    return (
+      <FinishWorkoutConfirmation
+        onBack={handleCancelFinish}
+        onFinish={handleConfirmFinish}
+      />
+    )
   }
 
   return (
